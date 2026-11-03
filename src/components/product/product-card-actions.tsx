@@ -30,8 +30,7 @@ export function ProductCardActions({ product }: { product: Product }) {
     <div className="relative z-10 flex flex-col gap-2 @[16rem]:flex-row">
       <Button
         variant="outline"
-        size="sm"
-        className="flex-1"
+        className="flex-1 py-1"
         onClick={handleAdd}
         disabled={!product.inStock}
         aria-label={`Add ${product.name} to cart`}
@@ -40,8 +39,7 @@ export function ProductCardActions({ product }: { product: Product }) {
         Add to cart
       </Button>
       <Button
-        size="sm"
-        className="flex-1"
+        className="flex-1 py-1"
         onClick={handleBuyNow}
         disabled={!product.inStock}
         aria-label={`Buy ${product.name} now`}

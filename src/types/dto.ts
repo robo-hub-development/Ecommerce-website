@@ -89,14 +89,6 @@ export interface RawArticle {
   readMinutes?: number | null;
 }
 
-export interface RawYoutubeVideo {
-  id: string;
-  title: string;
-  thumbnail: string;
-  url: string;
-  publishedAt: string;
-}
-
 export interface RawInstagramPost {
   id: string;
   caption?: string | null;

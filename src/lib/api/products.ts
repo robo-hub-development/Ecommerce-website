@@ -5,7 +5,6 @@ import {
   mapProduct,
   mapProductDetail,
   mapProductFilters,
-  mapProductSuggestion,
 } from "@/lib/api/mappers";
 import type { Paginated } from "@/types/api";
 import type {
@@ -13,14 +12,12 @@ import type {
   RawProduct,
   RawProductDetail,
   RawProductFilters,
-  RawProductSuggestion,
 } from "@/types/dto";
 import type {
   Product,
   ProductDetail,
   ProductFilters,
   ProductListParams,
-  ProductSuggestion,
 } from "@/types/product";
 
 const REVALIDATE_SECONDS = 300;
@@ -60,9 +57,4 @@ export async function getRelatedProducts(slug: string): Promise<Product[]> {
     tags: ["products", `product:${slug}`],
   });
   return raw.map(mapProduct);
-}
-
-export async function getSearchSuggestions(q: string, signal?: AbortSignal): Promise<ProductSuggestion[]> {
-  const raw = await api.get<RawProductSuggestion[]>(ENDPOINTS.SEARCH_SUGGESTIONS, { query: { q }, signal });
-  return raw.map(mapProductSuggestion);
 }

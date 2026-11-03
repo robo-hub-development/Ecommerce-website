@@ -47,13 +47,8 @@ async function applyAuth(headers: Headers) {
 
 async function ensureMocking() {
   if (!env.useMocks) return;
-  if (isServer) {
-    const { startServerMocking } = await import("@/mocks/server");
-    startServerMocking();
-  } else {
-    const { startMocking } = await import("@/mocks/browser");
-    await startMocking();
-  }
+  const { startServerMocking } = await import("@/mocks/server");
+  startServerMocking();
 }
 
 const appOrigin = () => (isServer ? env.siteUrl : window.location.origin);
@@ -61,7 +56,7 @@ const appOrigin = () => (isServer ? env.siteUrl : window.location.origin);
 function resolveTarget(path: string, { auth, sameOrigin }: RequestOptions) {
   if (sameOrigin) return { base: appOrigin(), path, isBackend: false };
   if (auth && !isServer) return { base: appOrigin(), path: `${ENDPOINTS.BFF_PROXY}${path}`, isBackend: false };
-  return { base: isServer ? env.serverApiBaseUrl : env.clientApiBaseUrl, path, isBackend: true };
+  return { base: env.apiBaseUrl, path, isBackend: true };
 }
 
 function buildUrl(base: string, path: string, query?: QueryParams) {
@@ -72,22 +67,47 @@ function buildUrl(base: string, path: string, query?: QueryParams) {
   return url;
 }
 
+interface ErrorBody {
+  message?: string;
+  errors?: Record<string, string | string[]>;
+}
+
 async function toApiError(response: Response) {
   let message = response.statusText || "Request failed";
   const fieldErrors: Record<string, string> = {};
   try {
-    const payload = (await response.json()) as {
-      message?: string;
-      errors?: Record<string, string | string[]>;
-    };
-    if (payload.message) message = payload.message;
-    for (const [field, issue] of Object.entries(payload.errors ?? {})) {
+    // The backend nests the details under `error`; our own route handlers put them at the top level.
+    const payload = (await response.json()) as ErrorBody & { error?: ErrorBody | null };
+    const body = payload.error ?? payload;
+    if (body.message) message = body.message;
+    for (const [field, issue] of Object.entries(body.errors ?? {})) {
       fieldErrors[field] = Array.isArray(issue) ? issue.join(" ") : issue;
     }
   } catch {
     // Non-JSON error body: keep the status text.
   }
   return new ApiError(response.status, message, fieldErrors);
+}
+
+/** Every backend response is `{ success, data, error }`; callers only care about `data`. */
+function unwrapEnvelope<T>(payload: unknown): T {
+  const isEnvelope =
+    typeof payload === "object" && payload !== null && "success" in payload && "data" in payload && "error" in payload;
+  return (isEnvelope ? (payload as { data: T }).data : payload) as T;
+}
+
+// The API sits on a host that sleeps when idle, so the first request after a pause can take a while: wait, then retry once.
+const REQUEST_TIMEOUT_MS = 30_000;
+const RETRY_DELAY_MS = 1_000;
+const RETRYABLE_STATUSES = new Set([502, 503, 504]);
+
+/** Aborts after the timeout, or as soon as the caller's own signal aborts. */
+function withTimeout(signal?: AbortSignal) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(new DOMException("Request timed out", "TimeoutError")), REQUEST_TIMEOUT_MS);
+  if (signal?.aborted) controller.abort(signal.reason);
+  else signal?.addEventListener("abort", () => controller.abort(signal.reason), { once: true });
+  return { signal: controller.signal, clear: () => clearTimeout(timer) };
 }
 
 async function request<T>(
@@ -99,32 +119,49 @@ async function request<T>(
   const { query, auth = false, revalidate, tags, cache, signal, headers: extraHeaders } = options;
   const target = resolveTarget(path, options);
 
-  if (target.isBackend) await ensureMocking();
+  if (target.isBackend) {
+    // The backend is only ever called from the server; browser code goes through our own route handlers.
+    if (!isServer) throw new Error(`Backend call from the browser: ${path}. Add a route handler and call it with sameOrigin.`);
+    await ensureMocking();
+  }
 
   const headers = new Headers({ Accept: "application/json", ...extraHeaders });
   if (body !== undefined) headers.set("Content-Type", "application/json");
   if (auth && target.isBackend) await applyAuth(headers);
 
   const next = revalidate !== undefined || tags ? { revalidate, tags } : undefined;
+  const url = buildUrl(target.base, target.path, query);
+  const attempts = method === "GET" && target.isBackend ? 2 : 1;
 
-  let response: Response;
-  try {
-    response = await fetch(buildUrl(target.base, target.path, query), {
-      method,
-      headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
-      cache,
-      signal,
-      next,
-    });
-  } catch (error) {
-    if (error instanceof DOMException && error.name === "AbortError") throw error;
-    throw new ApiError(0, "Network error. Please check your connection.");
+  let response: Response | undefined;
+  for (let attempt = 1; attempt <= attempts; attempt++) {
+    const timeout = withTimeout(signal);
+    try {
+      response = await fetch(url, {
+        method,
+        headers,
+        body: body === undefined ? undefined : JSON.stringify(body),
+        cache,
+        signal: timeout.signal,
+        next,
+      });
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      if (attempt === attempts) throw new ApiError(0, "Network error. Please check your connection.");
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+      continue;
+    } finally {
+      timeout.clear();
+    }
+    if (!RETRYABLE_STATUSES.has(response.status) || attempt === attempts) break;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
   }
 
+  if (!response) throw new ApiError(0, "Network error. Please check your connection.");
   if (!response.ok) throw await toApiError(response);
   if (response.status === 204) return undefined as T;
-  return (await response.json()) as T;
+  const payload: unknown = await response.json();
+  return target.isBackend ? unwrapEnvelope<T>(payload) : (payload as T);
 }
 
 export const api = {

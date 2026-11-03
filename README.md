@@ -23,9 +23,8 @@ All variables are validated with Zod in `src/lib/env.ts`, which is the only file
 | Variable                   | Used by          | Description                                                                                  |
 | -------------------------- | ---------------- | -------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_SITE_URL`     | client + server  | Public origin for canonical URLs, sitemap and Open Graph. Required.                          |
-| `NEXT_PUBLIC_API_BASE_URL` | client           | Backend base URL for browser calls. Required unless `NEXT_PUBLIC_USE_MOCKS=true`.            |
-| `API_BASE_URL`             | server           | Backend base URL for Server Components. Falls back to `NEXT_PUBLIC_API_BASE_URL`.            |
-| `NEXT_PUBLIC_USE_MOCKS`    | client + server  | `true` serves every API call from MSW (browser and Node). `false` calls the real backend.    |
+| `API_BASE_URL`             | server           | Backend base URL (e.g. `https://host/api/v1`). Server-only; required unless `NEXT_PUBLIC_USE_MOCKS=true`. Its host is also allowed for `next/image`. |
+| `NEXT_PUBLIC_USE_MOCKS`    | client + server  | `true` mocks only the endpoints the backend lacks (banners, blog, feeds, newsletter, cart, orders). `false` calls the real backend for everything. |
 | `NEXT_PUBLIC_*_URL`, `NEXT_PUBLIC_SUPPORT_*` | client + server | Social links and support contact details.                                |
 
 ## API layer
@@ -44,11 +43,13 @@ Rules: components and pages call only the service functions; services call `api.
 
 **Swapping to the real backend**
 
-1. Set `NEXT_PUBLIC_USE_MOCKS=false` and fill `NEXT_PUBLIC_API_BASE_URL` (and `API_BASE_URL` if the server reaches the API at a different address).
+1. Set `API_BASE_URL`, and `NEXT_PUBLIC_USE_MOCKS=false` once the backend serves every endpoint.
 2. Edit paths in `endpoints.ts` if they differ from the guide below.
 3. Edit `mappers.ts` (and `types/dto.ts`) if response shapes differ.
 
-**Mocks.** With `NEXT_PUBLIC_USE_MOCKS=true`, `client.ts` starts MSW lazily: the service worker in the browser and `msw/node` in Server Components and at build time. Mock OTP code: `123456`.
+**Server-side only.** The browser never calls the backend: Server Components call it directly, and client components call same-origin route handlers under `src/app/api` (auth, search, newsletter, and the authenticated `/api/bff` proxy). `client.ts` throws if backend code runs in the browser.
+
+**Mocks.** With `NEXT_PUBLIC_USE_MOCKS=true`, `client.ts` starts `msw/node` lazily for Server Components, route handlers and builds. Only endpoints the backend does not serve yet are mocked; everything else passes through to the real API.
 
 ## API Integration Guide
 

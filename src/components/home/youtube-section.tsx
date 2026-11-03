@@ -4,8 +4,8 @@ import { Play } from "lucide-react";
 import { SectionShell } from "@/components/layout/section-shell";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StateMessage } from "@/components/ui/state-message";
-import { getYoutubeVideos } from "@/lib/api/content";
-import { formatDate } from "@/lib/format";
+import { getYoutubeVideos } from "@/lib/api/youtube";
+import { formatDate, formatTimeAgo } from "@/lib/format";
 import { siteConfig } from "@/lib/site";
 
 const GRID = "grid gap-6 sm:grid-cols-2 lg:grid-cols-4";
@@ -59,9 +59,10 @@ async function Videos() {
             </span>
             <time
               dateTime={video.publishedAt}
+              title={formatDate(video.publishedAt)}
               className="-mt-2 text-xs text-muted-foreground"
             >
-              {formatDate(video.publishedAt)}
+              {formatTimeAgo(video.publishedAt)}
             </time>
           </a>
         </li>

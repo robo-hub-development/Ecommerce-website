@@ -8,11 +8,10 @@ import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
-import { getSearchSuggestions } from "@/lib/api/products";
+import { getSearchSuggestions } from "@/lib/api/search";
 import { formatPrice } from "@/lib/format";
 import { cn } from "@/lib/utils";
-
-const MIN_CHARS = 2;
+import { SEARCH_MIN_CHARS as MIN_CHARS } from "@/lib/validations/search";
 
 export function HeaderSearch({ className }: { className?: string }) {
   const router = useRouter();

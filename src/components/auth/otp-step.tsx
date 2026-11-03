@@ -15,7 +15,6 @@ import { sendOtp, verifyOtp } from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import { OTP_LENGTH, OTP_RESEND_SECONDS } from "@/lib/auth/constants";
 import { safeRedirectPath } from "@/lib/auth/redirect";
-import { env } from "@/lib/env";
 import { otpSchema, type OtpValues } from "@/lib/validations/auth";
 import { useAuthStore } from "@/store/auth";
 import type { SendOtpInput } from "@/types/user";
@@ -91,9 +90,6 @@ export function OtpStep({ request, next, onChangeDetails }: OtpStepProps) {
         <p id="otp-instructions" className="text-sm text-muted-foreground">
           Enter the {OTP_LENGTH}-digit code we sent to <span className="font-medium text-foreground">{request.email}</span>.
         </p>
-        {env.useMocks && (
-          <p className="text-xs text-muted-foreground">Demo mode: any account uses the code 123456.</p>
-        )}
       </div>
 
       <div className="flex flex-col gap-3">

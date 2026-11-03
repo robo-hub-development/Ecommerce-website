@@ -40,11 +40,12 @@ export const ENDPOINTS = {
   BFF_AUTH_VERIFY_OTP: "/api/auth/otp/verify",
   BFF_AUTH_ME: "/api/auth/me",
   BFF_AUTH_LOGOUT: "/api/auth/logout",
+  BFF_SEARCH_SUGGESTIONS: "/api/search/suggestions",
+  BFF_NEWSLETTER: "/api/newsletter",
   /** Browser calls with `auth: true` go through this proxy, which adds the session token server-side. */
   BFF_PROXY: "/api/bff",
 
-  // Social feeds (the backend holds the YouTube / Instagram credentials)
-  CONTENT_YOUTUBE: "/content/youtube",
+  // Social feeds (the backend holds the Instagram credentials; YouTube is read from its public feed, see youtube.ts)
   CONTENT_INSTAGRAM: "/content/instagram",
 
   // Marketing

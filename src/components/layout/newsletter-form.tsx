@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { subscribeToNewsletter } from "@/lib/api/content";
+import { subscribeToNewsletter } from "@/lib/api/newsletter";
 import { newsletterSchema, type NewsletterValues } from "@/lib/validations/newsletter";
 
 export function NewsletterForm() {

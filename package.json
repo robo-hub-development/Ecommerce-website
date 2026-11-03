@@ -47,10 +47,5 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^5.0.5"
-  },
-  "msw": {
-    "workerDirectory": [
-      "public"
-    ]
   }
 }

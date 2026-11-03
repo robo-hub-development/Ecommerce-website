@@ -1,6 +1,6 @@
 import type { Paginated } from "@/types/api";
 import type { CartItem } from "@/types/cart";
-import type { Article, Category, HeroSlide, InstagramPost, YoutubeVideo } from "@/types/content";
+import type { Article, Category, HeroSlide, InstagramPost } from "@/types/content";
 import type {
   RawArticle,
   RawAuthSession,
@@ -20,7 +20,6 @@ import type {
   RawProductFilters,
   RawProductSuggestion,
   RawUser,
-  RawYoutubeVideo,
 } from "@/types/dto";
 import type {
   CreateOrderResult,
@@ -151,14 +150,6 @@ export const mapArticle = (raw: RawArticle): Article => ({
   author: raw.author ?? "",
   publishedAt: raw.publishedAt,
   readMinutes: toNumber(raw.readMinutes, 1),
-});
-
-export const mapYoutubeVideo = (raw: RawYoutubeVideo): YoutubeVideo => ({
-  id: raw.id,
-  title: raw.title,
-  thumbnail: raw.thumbnail,
-  url: raw.url,
-  publishedAt: raw.publishedAt,
 });
 
 export const mapInstagramPost = (raw: RawInstagramPost): InstagramPost => ({

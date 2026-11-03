@@ -1,84 +1,8 @@
 import type {
   Article,
-  Category,
   HeroSlide,
   InstagramPost,
-  YoutubeVideo,
 } from "@/types/content";
-
-export const mockCategories: Category[] = [
-  {
-    slug: "robot-kits",
-    name: "Robot Kits",
-    description: "Build-it-yourself rovers, walkers and line followers.",
-    image: "/images/kits.svg",
-    productCount: 48,
-    children: [
-      { slug: "rover-kits", name: "Rover Kits" },
-      { slug: "walking-robots", name: "Walking Robots" },
-      { slug: "educational-kits", name: "Educational Kits" },
-    ],
-  },
-  {
-    slug: "drones",
-    name: "Drones",
-    description: "Camera drones, FPV racers and flight controllers.",
-    image: "/images/drones.svg",
-    productCount: 32,
-    children: [
-      { slug: "camera-drones", name: "Camera Drones" },
-      { slug: "fpv-drones", name: "FPV Drones" },
-      { slug: "drone-parts", name: "Frames & Parts" },
-    ],
-  },
-  {
-    slug: "arduino-boards",
-    name: "Arduino & Boards",
-    description: "Arduino, ESP32, Raspberry Pi and dev kits.",
-    image: "/images/arduino.svg",
-    productCount: 76,
-    children: [
-      { slug: "arduino", name: "Arduino" },
-      { slug: "esp32", name: "ESP32" },
-      { slug: "raspberry-pi", name: "Raspberry Pi" },
-    ],
-  },
-  {
-    slug: "sensors",
-    name: "Sensors & Modules",
-    description: "LiDAR, ultrasonic, IMU, vision and more.",
-    image: "/images/sensors.svg",
-    productCount: 120,
-    children: [
-      { slug: "distance-sensors", name: "Distance Sensors" },
-      { slug: "imu-gyro", name: "IMU & Gyro" },
-      { slug: "vision-modules", name: "Vision Modules" },
-    ],
-  },
-  {
-    slug: "robotic-arms",
-    name: "Robotic Arms",
-    description: "Desktop arms, grippers and servo kits.",
-    image: "/images/arms.svg",
-    productCount: 18,
-    children: [
-      { slug: "desktop-arms", name: "Desktop Arms" },
-      { slug: "grippers", name: "Grippers" },
-    ],
-  },
-  {
-    slug: "motors-drivers",
-    name: "Motors & Drivers",
-    description: "BLDC, stepper, servo motors and drivers.",
-    image: "/images/motors.svg",
-    productCount: 64,
-    children: [
-      { slug: "bldc-motors", name: "BLDC Motors" },
-      { slug: "stepper-motors", name: "Stepper Motors" },
-      { slug: "motor-drivers", name: "Motor Drivers" },
-    ],
-  },
-];
 
 export const mockSlides: HeroSlide[] = [
   {
@@ -152,37 +76,6 @@ export const mockArticles: Article[] = [
     author: "Isha Nair",
     publishedAt: "2026-09-21",
     readMinutes: 10,
-  },
-];
-
-export const mockYoutubeVideos: YoutubeVideo[] = [
-  {
-    id: "yt-1",
-    title: "Unboxing the 6-DOF robotic arm kit",
-    thumbnail: "/images/wide-1.svg",
-    url: "https://www.youtube.com/watch?v=mock-1",
-    publishedAt: "2026-10-24T09:30:00Z",
-  },
-  {
-    id: "yt-2",
-    title: "ESP32 line follower: full build and tuning",
-    thumbnail: "/images/wide-2.svg",
-    url: "https://www.youtube.com/watch?v=mock-2",
-    publishedAt: "2026-10-12T09:30:00Z",
-  },
-  {
-    id: "yt-3",
-    title: "Drone flight controller setup in 10 minutes",
-    thumbnail: "/images/wide-3.svg",
-    url: "https://www.youtube.com/watch?v=mock-3",
-    publishedAt: "2026-09-30T09:30:00Z",
-  },
-  {
-    id: "yt-4",
-    title: "Top 5 sensors every beginner should own",
-    thumbnail: "/images/wide-4.svg",
-    url: "https://www.youtube.com/watch?v=mock-4",
-    publishedAt: "2026-09-15T09:30:00Z",
   },
 ];
 
