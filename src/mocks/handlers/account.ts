@@ -1,131 +1,99 @@
-import { http, HttpResponse } from "msw";
-import { env } from "@/lib/env";
+import { bypass, http, HttpResponse, passthrough } from "msw";
 import { ENDPOINTS } from "@/lib/api/endpoints";
+import { env } from "@/lib/env";
 import { mockPath } from "@/mocks/handlers/paths";
-import { mockProducts } from "@/mocks/data/products";
-import type { CartItem } from "@/types/cart";
-import type { CreateOrderInput, Order } from "@/types/order";
+import type { RawCartItem, RawOrder, RawReturnRequest } from "@/types/dto";
 
-// In-memory state: resets on server restart, which is what a mock needs.
-// Cart, orders and payments are not on the backend yet; auth is, so any bearer token counts as signed in here.
-const MAX_QTY = 10;
+// MSW fallbacks for the account endpoints the backend does NOT have (see src/lib/api/GAPS.md):
+//   POST /payments/razorpay/order, POST /payments/razorpay/verify, POST /orders/{id}/returns.
+// Cart, orders and payment status are real: requests for them pass through to the backend, except the orders and
+// payment references these fallbacks created themselves. State is in memory and resets on server restart.
 
-let cart: CartItem[] = [];
-let orders: Order[] = [
-  {
-    id: "ord-1002",
-    orderNumber: "SRH-1002",
-    status: "confirmed",
-    paymentMethod: "online",
-    paymentStatus: "paid",
-    items: [],
-    total: 0,
-    placedAt: "2026-10-28T10:15:00Z",
-    canCancel: true,
-  },
-  {
-    id: "ord-1001",
-    orderNumber: "SRH-1001",
-    status: "shipped",
-    paymentMethod: "cod",
-    paymentStatus: "pending",
-    items: [],
-    total: 0,
-    placedAt: "2026-10-20T16:40:00Z",
-    canCancel: false,
-  },
-].map((order, index): Order => {
-  const product = mockProducts[index];
-  return {
-    ...(order as Order),
-    items: [{ productId: product.id, slug: product.slug, name: product.name, image: product.image, price: product.price, quantity: 1 }],
-    total: product.price,
-  };
-});
+const mockOrders = new Map<string, RawOrder>();
+const mockPayments = new Map<string, { orderId?: string; lines: RawCartItem[] }>();
 
-const isSignedIn = (request: Request) => Boolean(request.headers.get("authorization")?.startsWith("Bearer "));
-
+const bearer = (request: Request) => request.headers.get("authorization");
 const unauthorized = () => HttpResponse.json({ message: "Not signed in" }, { status: 401 });
-const badRequest = (message: string, errors: Record<string, string> = {}) =>
-  HttpResponse.json({ message, errors }, { status: 400 });
+const badRequest = (message: string) => HttpResponse.json({ message, errors: {} }, { status: 400 });
 
-function toCartItems(lines: { productId: string; quantity: number }[]) {
-  return lines.flatMap(({ productId, quantity }): CartItem[] => {
-    const product = mockProducts.find((p) => p.id === productId);
-    if (!product) return [];
-    return [
-      {
-        productId: product.id,
-        slug: product.slug,
-        name: product.name,
-        price: product.price,
-        image: product.image,
-        quantity: Math.min(Math.max(quantity, 1), MAX_QTY),
-      },
-    ];
-  });
+/** Reads the real cart so the mocked Razorpay order is priced from real products. */
+async function fetchRealCartLines(authorization: string, lineIds: string[]): Promise<RawCartItem[]> {
+  const response = await fetch(
+    bypass(`${env.apiBaseUrl}${ENDPOINTS.CART}`, { headers: { authorization, accept: "application/json" } }),
+  );
+  if (!response.ok) return [];
+  const payload = (await response.json()) as { data?: { items?: RawCartItem[] } };
+  return (payload.data?.items ?? []).filter((line) => line.id && lineIds.includes(line.id));
 }
 
 export const accountHandlers = [
-  http.get(mockPath(ENDPOINTS.CART), ({ request }) =>
-    isSignedIn(request) ? HttpResponse.json({ items: cart }) : unauthorized(),
-  ),
+  http.post(mockPath(ENDPOINTS.PAYMENT_RAZORPAY_ORDER), async ({ request }) => {
+    const authorization = bearer(request);
+    if (!authorization) return unauthorized();
+    const body = (await request.json()) as { cartItems?: string[] };
+    const lines = await fetchRealCartLines(authorization, body.cartItems ?? []);
+    if (lines.length === 0) return badRequest("Your cart is empty.");
 
-  http.put(mockPath(ENDPOINTS.CART), async ({ request }) => {
-    if (!isSignedIn(request)) return unauthorized();
-    const body = (await request.json()) as { items: { productId: string; quantity: number }[] };
-    cart = toCartItems(body.items);
-    return HttpResponse.json({ items: cart });
+    const rupees = lines.reduce((sum, line) => sum + Number(line.price) * line.quantity, 0);
+    const reference = `mock-ref-${crypto.randomUUID()}`;
+    mockPayments.set(reference, { lines });
+    return HttpResponse.json({
+      reference,
+      razorpayOrderId: `order_mock${reference.slice(-8)}`,
+      amount: Math.round(rupees * 100),
+      currency: "INR",
+    });
   }),
 
-  http.get(mockPath(ENDPOINTS.ORDERS), ({ request }) => {
-    if (!isSignedIn(request)) return unauthorized();
-    return HttpResponse.json({ items: orders, page: 1, pageSize: orders.length, total: orders.length, totalPages: 1 });
-  }),
+  http.post(mockPath(ENDPOINTS.PAYMENT_RAZORPAY_VERIFY), async ({ request }) => {
+    if (!bearer(request)) return unauthorized();
+    const body = (await request.json()) as { reference: string; razorpaySignature?: string };
+    const payment = mockPayments.get(body.reference);
+    if (!payment) return HttpResponse.json({ message: "Unknown payment" }, { status: 404 });
+    if (!body.razorpaySignature || body.razorpaySignature === "invalid") return badRequest("Payment signature mismatch.");
 
-  http.post(mockPath(ENDPOINTS.ORDERS), async ({ request }) => {
-    if (!isSignedIn(request)) return unauthorized();
-    const body = (await request.json()) as CreateOrderInput;
-    const items = toCartItems(body.items);
-    if (body.paymentMethod === "cod" && !(items.length === 1 && items[0].quantity === 1)) {
-      return badRequest("Cash on delivery is available only for a single item.");
-    }
-    if (body.paymentMethod === "online") {
-      return HttpResponse.json({ redirectUrl: `${env.siteUrl}/checkout/payment?reference=mock-payment` });
-    }
-    const order: Order = {
-      id: `ord-${1003 + orders.length}`,
-      orderNumber: `SRH-${1003 + orders.length}`,
+    const id = payment.orderId ?? crypto.randomUUID();
+    const order: RawOrder = {
+      id,
+      orderNumber: `SRH-MOCK-${mockOrders.size + 1}`,
       status: "confirmed",
-      paymentMethod: "cod",
-      paymentStatus: "pending",
-      items,
-      total: items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+      paymentMethod: "online",
+      paymentStatus: "paid",
+      items: payment.lines,
+      total: payment.lines.reduce((sum, line) => sum + Number(line.price) * line.quantity, 0),
       placedAt: new Date().toISOString(),
       canCancel: true,
     };
-    orders = [order, ...orders];
+    payment.orderId = id;
+    mockOrders.set(id, order);
     return HttpResponse.json({ order });
   }),
 
-  http.get(mockPath(ENDPOINTS.ORDER_BY_ID(":id")), ({ request, params }) => {
-    if (!isSignedIn(request)) return unauthorized();
-    const order = orders.find((o) => o.id === params.id);
-    return order ? HttpResponse.json(order) : HttpResponse.json({ message: "Not found" }, { status: 404 });
+  http.get(mockPath(ENDPOINTS.ORDER_BY_ID(":id")), ({ params }) => {
+    const order = mockOrders.get(String(params.id));
+    return order ? HttpResponse.json(order) : passthrough();
   }),
 
-  http.post(mockPath(ENDPOINTS.ORDER_CANCEL(":id")), ({ request, params }) => {
-    if (!isSignedIn(request)) return unauthorized();
-    const order = orders.find((o) => o.id === params.id);
-    if (!order) return HttpResponse.json({ message: "Not found" }, { status: 404 });
-    if (!order.canCancel) return badRequest("This order can no longer be cancelled.");
-    const cancelled: Order = { ...order, status: "cancelled", canCancel: false };
-    orders = orders.map((o) => (o.id === cancelled.id ? cancelled : o));
-    return HttpResponse.json(cancelled);
+  http.get(mockPath(ENDPOINTS.PAYMENT_STATUS(":reference")), ({ params }) => {
+    const payment = mockPayments.get(String(params.reference));
+    if (!payment) return passthrough();
+    const order = payment.orderId ? mockOrders.get(payment.orderId) : undefined;
+    return HttpResponse.json(order ? { status: "success", order } : { status: "pending" });
   }),
 
-  http.get(mockPath(ENDPOINTS.PAYMENT_STATUS(":reference")), ({ request }) => {
-    if (!isSignedIn(request)) return unauthorized();
-    return HttpResponse.json({ status: "success", order: orders[0] });
+  http.post(mockPath(ENDPOINTS.ORDER_RETURN(":id")), async ({ request }) => {
+    if (!bearer(request)) return unauthorized();
+    const form = await request.formData();
+    const description = String(form.get("description") ?? "");
+    if (description.trim().length < 10) return badRequest("Describe the problem in a few words.");
+    const returnRequest: RawReturnRequest = {
+      id: crypto.randomUUID(),
+      status: "requested",
+      reason: String(form.get("reason") ?? "other"),
+      description,
+      attachmentCount: form.getAll("files").length,
+      createdAt: new Date().toISOString(),
+    };
+    return HttpResponse.json(returnRequest);
   }),
 ];

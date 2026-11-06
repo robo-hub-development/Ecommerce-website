@@ -15,4 +15,5 @@ export const contentHandlers = [
 
   http.get(mockPath(ENDPOINTS.CONTENT_INSTAGRAM), () => HttpResponse.json(mockInstagramPosts)),
   http.post(mockPath(ENDPOINTS.NEWSLETTER), () => HttpResponse.json({ subscribed: true })),
+  http.post(mockPath(ENDPOINTS.CONTACT), () => HttpResponse.json({ sent: true })),
 ];

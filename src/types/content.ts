@@ -31,6 +31,11 @@ export interface Article {
   readMinutes: number;
 }
 
+/** Detail page: the body is sanitized HTML. */
+export interface ArticleDetail extends Article {
+  contentHtml: string;
+}
+
 export interface YoutubeVideo {
   id: string;
   title: string;

@@ -14,6 +14,18 @@ const ALLOWED_AREAS = [ENDPOINTS.CART, ENDPOINTS.ORDERS, ENDPOINTS.PAYMENT_STATU
 
 type Context = { params: Promise<{ path: string[] }> };
 
+/** JSON bodies by default; multipart uploads (return-request photos) are forwarded as FormData. */
+async function readBody(request: Request): Promise<unknown> {
+  if (request.headers.get("content-type")?.startsWith("multipart/form-data")) {
+    try {
+      return await request.formData();
+    } catch {
+      return undefined;
+    }
+  }
+  return readJson(request);
+}
+
 async function proxy(request: Request, { params }: Context) {
   const segments = (await params).path;
   const unsafe = segments.some((s) => s === "." || s === ".." || s.includes("/") || s.includes("\\"));
@@ -37,13 +49,13 @@ async function proxy(request: Request, { params }: Context) {
         result = await api.delete(path, options);
         break;
       case "POST":
-        result = await api.post(path, await readJson(request), options);
+        result = await api.post(path, await readBody(request), options);
         break;
       case "PUT":
-        result = await api.put(path, await readJson(request), options);
+        result = await api.put(path, await readBody(request), options);
         break;
       default:
-        result = await api.patch(path, await readJson(request), options);
+        result = await api.patch(path, await readBody(request), options);
     }
     return result === undefined ? new Response(null, { status: 204 }) : NextResponse.json(result);
   } catch (error) {

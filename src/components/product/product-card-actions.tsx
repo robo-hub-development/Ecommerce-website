@@ -21,9 +21,8 @@ export function ProductCardActions({ product }: { product: Product }) {
 
   const handleAdd = () => addToCart(item);
 
-  const handleBuyNow = () => {
-    addToCart(item, 1, { announceSuccess: false });
-    router.push("/checkout");
+  const handleBuyNow = async () => {
+    if (await addToCart(item, 1, { announceSuccess: false })) router.push("/checkout");
   };
 
   return (

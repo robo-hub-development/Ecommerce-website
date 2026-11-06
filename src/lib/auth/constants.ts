@@ -1,7 +1,7 @@
 export const SESSION_COOKIE = "srh_session";
 
 /** Routes that need a signed-in user (matched by the middleware). */
-export const PROTECTED_PATHS = ["/account", "/checkout"];
+export const PROTECTED_PATHS = ["/account", "/cart", "/checkout", "/order"];
 
 /** Routes a signed-in user has no reason to see. */
 export const GUEST_ONLY_PATHS = ["/login", "/register"];

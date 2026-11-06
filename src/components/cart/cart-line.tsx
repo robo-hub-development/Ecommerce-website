@@ -8,7 +8,7 @@ import { QuantityStepper } from "@/components/product/quantity-stepper";
 import { Button } from "@/components/ui/button";
 import { MAX_QUANTITY_PER_PRODUCT } from "@/lib/cart-rules";
 import { formatPrice } from "@/lib/format";
-import { useCartStore } from "@/store/cart";
+import { useCartActions } from "@/hooks/use-cart-actions";
 import type { CartItem } from "@/types/cart";
 
 interface CartLineProps {
@@ -18,18 +18,16 @@ interface CartLineProps {
 }
 
 export function CartLine({ item, onNavigate }: CartLineProps) {
-  const setQuantity = useCartStore((state) => state.setQuantity);
-  const removeItem = useCartStore((state) => state.removeItem);
-  const addItem = useCartStore((state) => state.addItem);
+  const { pending, add, setQuantity, remove } = useCartActions();
 
   const line = { productId: item.productId, variantId: item.variantId };
   const { quantity: _quantity, ...product } = item;
   void _quantity;
 
-  const handleRemove = () => {
-    removeItem(line);
+  const handleRemove = async () => {
+    if (!(await remove(line))) return;
     toast(`Removed ${item.name}`, {
-      action: { label: "Undo", onClick: () => addItem(product, item.quantity) },
+      action: { label: "Undo", onClick: () => void add(product, item.quantity) },
     });
   };
 
@@ -53,7 +51,7 @@ export function CartLine({ item, onNavigate }: CartLineProps) {
             </h3>
             {item.variantLabel && <p className="mt-0.5 text-sm text-muted-foreground">{item.variantLabel}</p>}
           </div>
-          <Button variant="ghost" size="icon-sm" onClick={handleRemove}>
+          <Button variant="ghost" size="icon-sm" onClick={handleRemove} disabled={pending}>
             <Trash2 aria-hidden />
             <span className="sr-only">Remove {item.name} from cart</span>
           </Button>
@@ -65,7 +63,8 @@ export function CartLine({ item, onNavigate }: CartLineProps) {
             label={`Quantity of ${item.name}`}
             value={item.quantity}
             max={MAX_QUANTITY_PER_PRODUCT}
-            onChange={(next) => setQuantity(line, next)}
+            disabled={pending}
+            onChange={(next) => void setQuantity(line, next)}
           />
           <p className="text-right">
             <span className="block font-bold">{formatPrice(item.price * item.quantity)}</span>

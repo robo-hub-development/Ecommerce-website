@@ -25,10 +25,9 @@ const schema = z
     NEXT_PUBLIC_SITE_URL: z.url().transform((value) => value.replace(/\/+$/, "")),
     API_BASE_URL: optionalUrl,
     NEXT_PUBLIC_USE_MOCKS: z.preprocess(emptyToUndefined, z.enum(["true", "false"]).default("false")),
+    NEXT_PUBLIC_RAZORPAY_KEY_ID: optionalText,
     NEXT_PUBLIC_YOUTUBE_CHANNEL_URL: optionalText,
     NEXT_PUBLIC_INSTAGRAM_URL: optionalText,
-    NEXT_PUBLIC_SUPPORT_EMAIL: optionalText,
-    NEXT_PUBLIC_SUPPORT_PHONE: optionalText,
   })
   .superRefine((value, ctx) => {
     // API_BASE_URL is server-only, so it is legitimately absent when this module is evaluated in the browser.
@@ -50,10 +49,9 @@ const parsed = schema.safeParse({
   NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || fallbackSiteUrl,
   API_BASE_URL: process.env.API_BASE_URL,
   NEXT_PUBLIC_USE_MOCKS: process.env.NEXT_PUBLIC_USE_MOCKS,
+  NEXT_PUBLIC_RAZORPAY_KEY_ID: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
   NEXT_PUBLIC_YOUTUBE_CHANNEL_URL: process.env.NEXT_PUBLIC_YOUTUBE_CHANNEL_URL,
   NEXT_PUBLIC_INSTAGRAM_URL: process.env.NEXT_PUBLIC_INSTAGRAM_URL,
-  NEXT_PUBLIC_SUPPORT_EMAIL: process.env.NEXT_PUBLIC_SUPPORT_EMAIL,
-  NEXT_PUBLIC_SUPPORT_PHONE: process.env.NEXT_PUBLIC_SUPPORT_PHONE,
 });
 
 if (!parsed.success) {
@@ -75,10 +73,10 @@ export const env = {
    */
   apiBaseUrl: data.API_BASE_URL ?? `${data.NEXT_PUBLIC_SITE_URL}/mock-api`,
   useMocks,
+  /** Public Razorpay key id (never the secret). Unset: online payment falls back to the backend's redirect flow. */
+  razorpayKeyId: data.NEXT_PUBLIC_RAZORPAY_KEY_ID ?? "",
   youtubeChannelUrl: data.NEXT_PUBLIC_YOUTUBE_CHANNEL_URL ?? "",
   instagramUrl: data.NEXT_PUBLIC_INSTAGRAM_URL ?? "",
-  supportEmail: data.NEXT_PUBLIC_SUPPORT_EMAIL ?? "",
-  supportPhone: data.NEXT_PUBLIC_SUPPORT_PHONE ?? "",
 } as const;
 
 export type Env = typeof env;

@@ -54,9 +54,8 @@ export function ProductView({ product, shareUrl }: ProductViewProps) {
 
   const handleAdd = () => addToCart(cartItem(), quantity);
 
-  const handleBuyNow = () => {
-    addToCart(cartItem(), quantity, { announceSuccess: false });
-    router.push("/checkout");
+  const handleBuyNow = async () => {
+    if (await addToCart(cartItem(), quantity, { announceSuccess: false })) router.push("/checkout");
   };
 
   return (
@@ -75,13 +74,16 @@ export function ProductView({ product, shareUrl }: ProductViewProps) {
             {product.isNew && <Badge variant="secondary">New</Badge>}
           </div>
           <h1 className="text-h1">{product.name}</h1>
-          {product.reviewCount > 0 && (
-            <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
-              <Star className="size-4 fill-warning text-warning" aria-hidden />
-              <span className="font-medium text-foreground">{product.rating.toFixed(1)}</span>
-              <span>({product.reviewCount} reviews)</span>
-            </p>
-          )}
+            <span style={{display:'flex', gap:'10px'}}>
+            {product.reviewCount > 0 && (
+              <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                <Star className="size-4 fill-warning text-warning" aria-hidden />
+                <span className="font-medium text-foreground">{product.rating.toFixed(1)}</span>
+                <span>({product.reviewCount} reviews)</span>
+              </p>
+            )}
+            <ShareButton title={product.name} url={shareUrl} />
+          </span>
           {product.summary && <p className="text-muted-foreground">{product.summary}</p>}
         </div>
 
@@ -130,10 +132,6 @@ export function ProductView({ product, shareUrl }: ProductViewProps) {
           <Button size="lg" className="flex-1" onClick={handleBuyNow} disabled={!inStock}>
             Buy now
           </Button>
-        </div>
-
-        <div>
-          <ShareButton title={product.name} url={shareUrl} />
         </div>
       </div>
     </div>

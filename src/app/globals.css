@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -78,7 +79,7 @@
   --shadow-pop:
     0 8px 16px oklch(0.2 0.03 255 / 0.1), 0 24px 48px oklch(0.2 0.03 255 / 0.14);
   --shadow-glow:
-    0 0 0 1px oklch(0.55 0.2 258 / 0.3), 0 8px 24px oklch(0.55 0.2 258 / 0.28);
+    0 0 0 1px oklch(0.6 0.12 195 / 0.3), 0 8px 24px oklch(0.6 0.12 195 / 0.28);
 
   /* Layout */
   --container-page: 80rem;
@@ -88,60 +89,60 @@
   --radius: 0.75rem;
 
   --background: oklch(1 0 0);
-  --foreground: oklch(0.2 0.03 258);
-  --surface: oklch(0.975 0.005 250);
+  --foreground: oklch(0.2 0.045 255);
+  --surface: oklch(0.975 0.006 255);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.2 0.03 258);
+  --card-foreground: oklch(0.2 0.045 255);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.2 0.03 258);
+  --popover-foreground: oklch(0.2 0.045 255);
 
-  /* Electric blue (white text on it passes AA) */
-  --primary: oklch(0.54 0.2 258);
-  --primary-foreground: oklch(1 0 0);
-  --primary-soft: oklch(0.96 0.025 250);
-  --cyan: oklch(0.8 0.13 205);
+  /* Brand: orange primary, navy secondary */
+  --primary: #FE6B03;
+  --primary-foreground: #03244F;           /* navy on orange = ~6:1 contrast (white would be ~2.6:1, fails AA) */
+  --primary-soft: oklch(0.96 0.03 55);
+  --highlight: oklch(0.82 0.15 70);        /* replaces --cyan: brighter amber highlight */
 
-  --secondary: oklch(0.96 0.008 250);
-  --secondary-foreground: oklch(0.25 0.03 258);
-  --muted: oklch(0.96 0.008 250);
-  --muted-foreground: oklch(0.47 0.025 258);
-  --accent: oklch(0.96 0.025 250);
-  --accent-foreground: oklch(0.4 0.17 258);
+  --secondary: #03244F;
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.962 0.008 255);
+  --muted-foreground: oklch(0.47 0.03 255);
+  --accent: oklch(0.96 0.03 55);
+  --accent-foreground: oklch(0.45 0.15 45);
 
   --success: oklch(0.52 0.14 155);
-  --warning: oklch(0.75 0.15 75);
+  --warning: oklch(0.78 0.15 85);
   --destructive: oklch(0.55 0.22 27);
 
-  --border: oklch(0.92 0.01 250);
-  --input: oklch(0.88 0.012 250);
-  --ring: oklch(0.54 0.2 258);
+  --border: oklch(0.92 0.01 255);
+  --input: oklch(0.88 0.015 255);
+  --ring: #FE6B03;
 }
 
 .dark {
-  --background: oklch(0.16 0.03 258);
-  --foreground: oklch(0.97 0.005 250);
-  --surface: oklch(0.2 0.035 258);
-  --card: oklch(0.21 0.035 258);
-  --card-foreground: oklch(0.97 0.005 250);
-  --popover: oklch(0.21 0.035 258);
-  --popover-foreground: oklch(0.97 0.005 250);
+  --background: #2f3845;
+  --foreground: oklch(0.97 0.005 255);
+  --surface: oklch(0.21 0.055 255);
+  --card: oklch(0.22 0.055 255);
+  --card-foreground: oklch(0.97 0.005 255);
+  --popover: oklch(0.22 0.055 255);
+  --popover-foreground: oklch(0.97 0.005 255);
 
-  --primary: oklch(0.7 0.16 235);
-  --primary-foreground: oklch(0.16 0.03 258);
-  --primary-soft: oklch(0.26 0.06 255);
+  --primary: #FE6B03;
+  --primary-foreground: oklch(0.16 0.05 255);
+  --primary-soft: oklch(0.3 0.07 50);
+  --highlight: oklch(0.82 0.15 70);
 
-  --secondary: oklch(0.26 0.035 258);
-  --secondary-foreground: oklch(0.97 0.005 250);
-  --muted: oklch(0.26 0.035 258);
-  --muted-foreground: oklch(0.73 0.02 255);
-  --accent: oklch(0.28 0.05 255);
-  --accent-foreground: oklch(0.9 0.05 235);
+  --secondary: oklch(0.3 0.08 255);        /* lifted navy so it stays visible on dark bg */
+  --secondary-foreground: oklch(0.97 0.005 255);
+  --muted: oklch(0.27 0.05 255);
+  --muted-foreground: oklch(0.73 0.025 255);
+  --accent: oklch(0.3 0.07 50);
+  --accent-foreground: oklch(0.9 0.08 60);
 
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 16%);
-  --ring: oklch(0.7 0.16 235);
+  --ring: #FE6B03;
 }
-
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -176,5 +177,62 @@
   /* Vertical rhythm between page sections */
   .section-y {
     @apply py-12 md:py-16 lg:py-24;
+  }
+}
+
+/* Legal pages: typography tuned to the design tokens */
+.policy-prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--foreground);
+  --tw-prose-links: var(--primary);
+  --tw-prose-bold: var(--foreground);
+  --tw-prose-bullets: var(--muted-foreground);
+  --tw-prose-hr: var(--border);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+  line-height: 1.75;
+}
+.policy-prose h2 {
+  scroll-margin-top: 6rem;
+  margin-top: 2.5rem;
+  font-size: 1.375rem;
+  letter-spacing: -0.01em;
+}
+.policy-prose h2[data-part] {
+  margin-top: 3.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  font-size: 1.75rem;
+}
+.policy-prose h3 {
+  scroll-margin-top: 6rem;
+}
+.policy-prose a {
+  text-underline-offset: 2px;
+}
+.policy-todo {
+  border-radius: 0.25rem;
+  background: color-mix(in oklab, #f59e0b 25%, transparent);
+  color: inherit;
+  padding: 0 0.25rem;
+  outline: 1px dashed color-mix(in oklab, #f59e0b 70%, transparent);
+}
+
+@media print {
+  header,
+  footer,
+  [data-print-hide] {
+    display: none !important;
+  }
+  .policy-prose {
+    font-size: 11pt;
+  }
+  .policy-prose a {
+    color: inherit;
+    text-decoration: underline;
+  }
+  .policy-todo {
+    outline: none;
+    background: none;
   }
 }

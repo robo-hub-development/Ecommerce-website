@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { getArticles } from "@/lib/api/blogs";
 import { getCategories } from "@/lib/api/categories";
 import { getProducts } from "@/lib/api/products";
 import { absoluteUrl } from "@/lib/seo";
@@ -17,15 +18,26 @@ async function listProductSlugs() {
 }
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const staticRoutes = ["/", "/products"];
+  const staticRoutes = [
+    "/",
+    "/products",
+    "/blog",
+    "/videos",
+    "/instagram",
+    "/about",
+    "/contact",
+    "/privacy-policy-terms",
+    "/shipping-returns-refunds",
+  ];
   let dynamicRoutes: string[] = [];
 
   try {
-    const [categories, productSlugs] = await Promise.all([getCategories(), listProductSlugs()]);
+    const [categories, productSlugs, articles] = await Promise.all([getCategories(), listProductSlugs(), getArticles()]);
     const categorySlugs = categories.flatMap((category) => [category.slug, ...category.children.map((child) => child.slug)]);
     dynamicRoutes = [
       ...categorySlugs.map((slug) => `/category/${slug}`),
       ...productSlugs.map((slug) => `/products/${slug}`),
+      ...articles.map((article) => `/blog/${article.slug}`),
     ];
   } catch {
     // Backend unreachable: still publish the static routes; the sitemap regenerates on the next revalidation.

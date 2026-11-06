@@ -7,6 +7,7 @@ import { MegaMenu } from "@/components/layout/mega-menu";
 import { MobileMenu } from "@/components/layout/mobile-menu";
 import { getCategories } from "@/lib/api/categories";
 import { primaryNav } from "@/lib/site";
+import  logo  from "../../../public/logo.svg";
 
 export async function SiteHeader() {
   const categories = await getCategories().catch(() => []);
@@ -26,7 +27,7 @@ export async function SiteHeader() {
       <header className="sticky top-0 z-40 border-b bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/80">
         <div className="container-page flex flex-wrap items-center gap-x-2 gap-y-3 py-3 lg:flex-nowrap lg:gap-x-4">
           <MobileMenu categories={categories} />
-          <Logo />
+          <Logo logo={logo}/>
 
           <nav aria-label="Main" className="ml-2 hidden items-center lg:flex">
             <MegaMenu categories={categories} />

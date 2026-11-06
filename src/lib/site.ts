@@ -1,11 +1,10 @@
+import { site } from "@/config/site";
 import { env } from "@/lib/env";
 
 export const siteConfig = {
-  name: "Stem Robo Hub",
+  name: site.name,
+  shortName: site.shortName,
   tagline: "Robotics kits, drones, Arduino and sensors for makers and engineers.",
-  email: env.supportEmail,
-  phone: env.supportPhone,
-  address: "Plot 21, Tech Park Road, Bengaluru, Karnataka 560001",
   social: {
     youtube: env.youtubeChannelUrl,
     instagram: env.instagramUrl,
@@ -28,6 +27,12 @@ export const footerLinks = {
     { label: "About us", href: "/about" },
     { label: "Blog", href: "/blog" },
     { label: "Contact", href: "/contact" },
+    { label: "Videos", href: "/videos" },
+    { label: "Instagram", href: "/instagram" },
+  ],
+  Policies: [
+    { label: "Privacy Policy & Terms", href: "/privacy-policy-terms" },
+    { label: "Shipping, Returns & Refunds", href: "/shipping-returns-refunds" },
   ],
   Support: [
     { label: "My orders", href: "/account/orders" },

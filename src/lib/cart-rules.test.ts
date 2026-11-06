@@ -8,8 +8,8 @@ import {
   computeBill,
   getCodEligibility,
   removeLine,
-  sanitizeLines,
   setLineQuantity,
+  toServerLines,
 } from "@/lib/cart-rules";
 import type { CartItem } from "@/types/cart";
 
@@ -21,6 +21,15 @@ const item = (overrides: Partial<CartItem> = {}): CartItem => ({
   image: "/x.svg",
   quantity: 1,
   ...overrides,
+});
+
+describe("toServerLines", () => {
+  it("sends only the product id and a capped quantity", () => {
+    expect(toServerLines([item({ quantity: 3, variantId: "v1" }), item({ productId: "p2", quantity: 99 })])).toEqual([
+      { productId: "p1", quantity: 3 },
+      { productId: "p2", quantity: MAX_QUANTITY_PER_PRODUCT },
+    ]);
+  });
 });
 
 describe("getCodEligibility", () => {
@@ -140,25 +149,6 @@ describe("setLineQuantity / removeLine", () => {
   it("removes only the matching line", () => {
     const cart = [item({ variantId: "a" }), item({ variantId: "b" })];
     expect(removeLine(cart, { productId: "p1", variantId: "a" })).toEqual([cart[1]]);
-  });
-});
-
-describe("sanitizeLines", () => {
-  it("returns an empty cart for non-array input", () => {
-    expect(sanitizeLines(null)).toEqual([]);
-    expect(sanitizeLines({})).toEqual([]);
-  });
-
-  it("drops malformed lines and clamps tampered quantities", () => {
-    const result = sanitizeLines([item({ quantity: 99 }), { nope: true }, null, item({ productId: "p2", quantity: -4 })]);
-    expect(result.map((line) => [line.productId, line.quantity])).toEqual([
-      ["p1", 10],
-      ["p2", 1],
-    ]);
-  });
-
-  it("merges duplicate lines within the limit", () => {
-    expect(sanitizeLines([item({ quantity: 7 }), item({ quantity: 7 })])[0].quantity).toBe(10);
   });
 });
 

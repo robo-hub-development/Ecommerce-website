@@ -1,0 +1,2963 @@
+{
+    "openapi": "3.0.3",
+    "info": {
+        "title": "Stem Robo Hub API",
+        "version": "1.0.0 (v1)",
+        "description": "Backend API for the Stem Robo Hub storefront.\n\n**Auth:** call `POST /auth/otp/send` then `POST /auth/otp/verify`, then send `Authorization: Bearer <token>` on routes marked with a lock.\n\n**Errors:** non-2xx responses return `{\"message\": str, \"errors\": {field: [str]}}`."
+    },
+    "paths": {
+        "/api/v1/health": {
+            "get": {
+                "operationId": "v1_health_retrieve",
+                "description": "200 when the API and database are reachable; otherwise 503 with the failing checks.",
+                "summary": "Health check",
+                "tags": [
+                    "System"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/HealthResponse"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "A dependency is unavailable; `error.errors` names the failing checks."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/otp/send": {
+            "post": {
+                "operationId": "v1_auth_otp_send_create",
+                "description": "`login` needs an existing account; `register` needs `name` and a `mobile` and email that are not already registered (both must be unique).",
+                "summary": "Send a login / register OTP",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OtpSendRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/OtpSendResponse"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Validation failed; `errors` maps field -> messages."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Too many requests; see the `Retry-After` header."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/otp/verify": {
+            "post": {
+                "operationId": "v1_auth_otp_verify_create",
+                "description": "For `register` the account is created from the data sent to `/otp/send`.",
+                "summary": "Verify OTP and start a session",
+                "tags": [
+                    "Auth"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OtpVerifyRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/OtpVerifyResponse"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Validation failed; `errors` maps field -> messages."
+                    },
+                    "429": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Too many requests; see the `Retry-After` header."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/me": {
+            "get": {
+                "operationId": "v1_auth_me_retrieve",
+                "summary": "Current user",
+                "tags": [
+                    "Auth"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/MeResponse"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/logout": {
+            "post": {
+                "operationId": "v1_auth_logout_create",
+                "summary": "End the current session",
+                "tags": [
+                    "Auth"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No response body"
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    }
+                }
+            }
+        },
+        "/api/v1/categories": {
+            "get": {
+                "operationId": "v1_categories_list",
+                "summary": "Category tree",
+                "tags": [
+                    "Catalogue"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Category"
+                                            }
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/categories/{slug}": {
+            "get": {
+                "operationId": "v1_categories_retrieve",
+                "summary": "Category or sub-category by slug",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Catalogue"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Category"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Unknown or inactive resource."
+                    }
+                }
+            }
+        },
+        "/api/v1/products": {
+            "get": {
+                "operationId": "v1_products_list",
+                "description": "`category` matches the category and, for a top-level one, all its sub-categories.",
+                "summary": "List products (paginated, filterable)",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "category",
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[-a-zA-Z0-9_]+$"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "maxPrice",
+                        "schema": {
+                            "type": "string",
+                            "format": "decimal",
+                            "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "minPrice",
+                        "schema": {
+                            "type": "string",
+                            "format": "decimal",
+                            "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
+                        }
+                    },
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pageSize",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "schema": {
+                            "enum": [
+                                "newest",
+                                "bestselling",
+                                "price-asc",
+                                "price-desc"
+                            ],
+                            "type": "string",
+                            "default": "newest",
+                            "minLength": 1
+                        },
+                        "description": "* `newest` - newest\n* `bestselling` - bestselling\n* `price-asc` - price-asc\n* `price-desc` - price-desc"
+                    }
+                ],
+                "tags": [
+                    "Catalogue"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Validation failed; `errors` maps field -> messages."
+                    }
+                }
+            }
+        },
+        "/api/v1/products/filters": {
+            "get": {
+                "operationId": "v1_products_filters_retrieve",
+                "summary": "Available filter values (price range) for a category / search",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "category",
+                        "schema": {
+                            "type": "string",
+                            "minLength": 1,
+                            "pattern": "^[-a-zA-Z0-9_]+$"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "maxPrice",
+                        "schema": {
+                            "type": "string",
+                            "format": "decimal",
+                            "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "minPrice",
+                        "schema": {
+                            "type": "string",
+                            "format": "decimal",
+                            "pattern": "^-?\\d{0,8}(?:\\.\\d{0,2})?$"
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    },
+                    {
+                        "in": "query",
+                        "name": "sort",
+                        "schema": {
+                            "enum": [
+                                "newest",
+                                "bestselling",
+                                "price-asc",
+                                "price-desc"
+                            ],
+                            "type": "string",
+                            "default": "newest",
+                            "minLength": 1
+                        },
+                        "description": "* `newest` - newest\n* `bestselling` - bestselling\n* `price-asc` - price-asc\n* `price-desc` - price-desc"
+                    }
+                ],
+                "tags": [
+                    "Catalogue"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ProductFilters"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Validation failed; `errors` maps field -> messages."
+                    }
+                }
+            }
+        },
+        "/api/v1/products/{slug}": {
+            "get": {
+                "operationId": "v1_products_retrieve",
+                "summary": "Product detail",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Catalogue"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Unknown or inactive resource."
+                    }
+                }
+            }
+        },
+        "/api/v1/products/{slug}/related": {
+            "get": {
+                "operationId": "v1_products_related_list",
+                "summary": "Up to 4 related products",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "slug",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Catalogue"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Product"
+                                            }
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Unknown or inactive resource."
+                    }
+                }
+            }
+        },
+        "/api/v1/search/suggestions": {
+            "get": {
+                "operationId": "v1_search_suggestions_list",
+                "description": "A blank or missing `q` returns an empty list.",
+                "summary": "Search-as-you-type suggestions (max 5)",
+                "parameters": [
+                    {
+                        "in": "query",
+                        "name": "q",
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 100
+                        }
+                    }
+                ],
+                "tags": [
+                    "Catalogue"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/ProductSuggestion"
+                                            }
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/api/v1/cart": {
+            "get": {
+                "operationId": "v1_cart_retrieve",
+                "summary": "Current cart, priced from the catalogue",
+                "tags": [
+                    "Cart"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Cart"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    }
+                }
+            },
+            "put": {
+                "operationId": "v1_cart_update",
+                "description": "Max 10 per product. Each product at most once. Send `items: []` to empty the cart.",
+                "summary": "Replace the whole cart",
+                "tags": [
+                    "Cart"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CartInputRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Cart"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Validation failed; `errors` maps field -> messages."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    }
+                }
+            }
+        },
+        "/api/v1/cart/items/{id}": {
+            "delete": {
+                "operationId": "v1_cart_items_destroy",
+                "description": "Removes a live (not yet ordered) line of the caller's cart; returns the updated cart.",
+                "summary": "Remove one line from the cart",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Cart"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Cart"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "No such live line in the signed-in user's cart."
+                    }
+                }
+            }
+        },
+        "/api/v1/orders": {
+            "get": {
+                "operationId": "v1_orders_list",
+                "summary": "Order history, newest first",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "required": false,
+                        "in": "query",
+                        "description": "A page number within the paginated result set.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "pageSize",
+                        "required": false,
+                        "in": "query",
+                        "description": "Number of results to return per page.",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "tags": [
+                    "Orders"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PaginatedOrderList"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    }
+                }
+            },
+            "post": {
+                "operationId": "v1_orders_create",
+                "description": "The order is built from the cart lines listed in `cartItems` (live lines of the cart named by `cartId`); quantities and prices come from the server. Lines not listed stay in the cart.\n\n- `cod`: allowed only for exactly one line with quantity 1; creates the order now (**201**, `order`).\n- `online`: no order yet. Stock is held, a Razorpay payment link is created and its URL is returned (**200**, `redirectUrl`). The order is created when the payment succeeds; poll `GET /payments/{reference}` from the return page. **503** when online payments are not configured.",
+                "summary": "Place an order (COD) or start an online payment",
+                "tags": [
+                    "Orders"
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/CreateOrderRequest"
+                            }
+                        }
+                    },
+                    "required": true
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PlacedOrder"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Redirect"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Validation failed; `errors` maps field -> messages."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    },
+                    "502": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "The payment gateway failed; nothing was held."
+                    },
+                    "503": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Online payments are not configured."
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/{id}": {
+            "get": {
+                "operationId": "v1_orders_retrieve",
+                "summary": "Order detail",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Orders"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Order"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "No such order for the signed-in user."
+                    }
+                }
+            }
+        },
+        "/api/v1/orders/{id}/cancel": {
+            "post": {
+                "operationId": "v1_orders_cancel_create",
+                "description": "Allowed while the order is pending or confirmed and inside the cancellation window; stock is returned. `canCancel` on the order tells the client whether to offer this.",
+                "summary": "Cancel an order",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "id",
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Orders"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/Order"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Validation failed; `errors` maps field -> messages."
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "No such order for the signed-in user."
+                    }
+                }
+            }
+        },
+        "/api/v1/payments/webhook": {
+            "post": {
+                "operationId": "v1_payments_webhook_create",
+                "description": "Handles `payment_link.paid`, `payment_link.cancelled` and `payment_link.expired`. Verifies `X-Razorpay-Signature` against the raw body; replays are no-ops.",
+                "summary": "Razorpay webhook",
+                "tags": [
+                    "Payments"
+                ],
+                "security": [
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/WebhookResult"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "400": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing/invalid signature or malformed body."
+                    }
+                }
+            }
+        },
+        "/api/v1/payments/{reference}": {
+            "get": {
+                "operationId": "v1_payments_retrieve",
+                "description": "Called from the payment return page. While `pending` it asks the gateway directly, so a late webhook does not leave the shopper waiting. `order` is present once the order exists.",
+                "summary": "Outcome of an online payment",
+                "parameters": [
+                    {
+                        "in": "path",
+                        "name": "reference",
+                        "schema": {
+                            "type": "string"
+                        },
+                        "required": true
+                    }
+                ],
+                "tags": [
+                    "Payments"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PaymentStatus"
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    },
+                    "401": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "Missing, invalid, expired or revoked token."
+                    },
+                    "404": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                false
+                                            ]
+                                        },
+                                        "data": {
+                                            "nullable": true,
+                                            "description": "Always null on failure."
+                                        },
+                                        "error": {
+                                            "$ref": "#/components/schemas/Error"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": "No such payment for the signed-in user."
+                    }
+                }
+            }
+        },
+        "/api/v1/banners": {
+            "get": {
+                "operationId": "v1_banners_list",
+                "description": "Active banners in display order. `secondaryCta` is omitted when not set.",
+                "summary": "Home hero slides",
+                "tags": [
+                    "Content"
+                ],
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {}
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "success",
+                                        "data",
+                                        "error"
+                                    ],
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "enum": [
+                                                true
+                                            ]
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Banner"
+                                            }
+                                        },
+                                        "error": {
+                                            "nullable": true,
+                                            "description": "Always null on success."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "description": ""
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "AddressRequest": {
+                "type": "object",
+                "properties": {
+                    "fullName": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 120
+                    },
+                    "mobile": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^\\+?\\d{10,15}$",
+                        "maxLength": 16
+                    },
+                    "line1": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 200
+                    },
+                    "line2": {
+                        "type": "string",
+                        "default": "",
+                        "maxLength": 200
+                    },
+                    "city": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    },
+                    "state": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100
+                    },
+                    "pincode": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^\\d{6}$"
+                    }
+                },
+                "required": [
+                    "city",
+                    "fullName",
+                    "line1",
+                    "mobile",
+                    "pincode",
+                    "state"
+                ]
+            },
+            "Banner": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "eyebrow": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "imageAlt": {
+                        "type": "string"
+                    },
+                    "primaryCta": {
+                        "$ref": "#/components/schemas/Cta"
+                    },
+                    "secondaryCta": {
+                        "$ref": "#/components/schemas/Cta"
+                    }
+                },
+                "required": [
+                    "description",
+                    "eyebrow",
+                    "id",
+                    "image",
+                    "imageAlt",
+                    "primaryCta",
+                    "title"
+                ]
+            },
+            "Cart": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true,
+                        "description": "Cart id (null until the first PUT); send it as cartId when ordering."
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PricedLine"
+                        }
+                    }
+                },
+                "required": [
+                    "id",
+                    "items"
+                ]
+            },
+            "CartInputRequest": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CartLineInputRequest"
+                        }
+                    }
+                },
+                "required": [
+                    "items"
+                ]
+            },
+            "CartLineInputRequest": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "quantity": {
+                        "type": "integer",
+                        "maximum": 10,
+                        "minimum": 1
+                    }
+                },
+                "required": [
+                    "productId",
+                    "quantity"
+                ]
+            },
+            "Category": {
+                "type": "object",
+                "properties": {
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "image": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "productCount": {
+                        "type": "integer"
+                    },
+                    "children": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/CategoryChild"
+                        }
+                    },
+                    "parent": {
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/CategoryParent"
+                            }
+                        ],
+                        "nullable": true
+                    }
+                },
+                "required": [
+                    "children",
+                    "description",
+                    "image",
+                    "name",
+                    "parent",
+                    "productCount",
+                    "slug"
+                ]
+            },
+            "CategoryChild": {
+                "type": "object",
+                "properties": {
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name",
+                    "slug"
+                ]
+            },
+            "CategoryParent": {
+                "type": "object",
+                "properties": {
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "name",
+                    "slug"
+                ]
+            },
+            "CreateOrderRequest": {
+                "type": "object",
+                "properties": {
+                    "cartId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "The caller's cart (id from GET /cart)."
+                    },
+                    "cartItems": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        },
+                        "description": "Ids of the cart lines to order (from GET /cart). Other lines stay in the cart.",
+                        "maxItems": 50,
+                        "minItems": 1
+                    },
+                    "address": {
+                        "$ref": "#/components/schemas/AddressRequest"
+                    },
+                    "paymentMethod": {
+                        "$ref": "#/components/schemas/PaymentMethodEnum"
+                    }
+                },
+                "required": [
+                    "address",
+                    "cartId",
+                    "cartItems",
+                    "paymentMethod"
+                ]
+            },
+            "Cta": {
+                "type": "object",
+                "properties": {
+                    "label": {
+                        "type": "string"
+                    },
+                    "href": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "href",
+                    "label"
+                ]
+            },
+            "Error": {
+                "type": "object",
+                "properties": {
+                    "message": {
+                        "type": "string"
+                    },
+                    "errors": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "message"
+                ]
+            },
+            "HealthResponse": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string"
+                    },
+                    "checks": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
+                },
+                "required": [
+                    "checks",
+                    "status"
+                ]
+            },
+            "MeResponse": {
+                "type": "object",
+                "properties": {
+                    "user": {
+                        "$ref": "#/components/schemas/User"
+                    }
+                },
+                "required": [
+                    "user"
+                ]
+            },
+            "Order": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "orderNumber": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "paymentMethod": {
+                        "type": "string"
+                    },
+                    "paymentStatus": {
+                        "type": "string"
+                    },
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/OrderItem"
+                        }
+                    },
+                    "total": {
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 10000000000,
+                        "minimum": -10000000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    },
+                    "placedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "canCancel": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "canCancel",
+                    "id",
+                    "items",
+                    "orderNumber",
+                    "paymentMethod",
+                    "paymentStatus",
+                    "placedAt",
+                    "status",
+                    "total"
+                ]
+            },
+            "OrderItem": {
+                "type": "object",
+                "properties": {
+                    "productId": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 100000000,
+                        "minimum": -100000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    },
+                    "image": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "image",
+                    "name",
+                    "price",
+                    "productId",
+                    "quantity",
+                    "slug"
+                ]
+            },
+            "OtpSendRequest": {
+                "type": "object",
+                "properties": {
+                    "purpose": {
+                        "$ref": "#/components/schemas/PurposeEnum"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "minLength": 1,
+                        "maxLength": 254
+                    },
+                    "name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "mobile": {
+                        "type": "string",
+                        "pattern": "^\\+?\\d{10,15}$",
+                        "maxLength": 16
+                    }
+                },
+                "required": [
+                    "email",
+                    "purpose"
+                ]
+            },
+            "OtpSendResponse": {
+                "type": "object",
+                "properties": {
+                    "expiresInSeconds": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "expiresInSeconds"
+                ]
+            },
+            "OtpVerifyRequest": {
+                "type": "object",
+                "properties": {
+                    "purpose": {
+                        "$ref": "#/components/schemas/PurposeEnum"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email",
+                        "minLength": 1,
+                        "maxLength": 254
+                    },
+                    "otp": {
+                        "type": "string",
+                        "minLength": 1,
+                        "pattern": "^\\d{6}$"
+                    }
+                },
+                "required": [
+                    "email",
+                    "otp",
+                    "purpose"
+                ]
+            },
+            "OtpVerifyResponse": {
+                "type": "object",
+                "properties": {
+                    "user": {
+                        "$ref": "#/components/schemas/User"
+                    },
+                    "token": {
+                        "type": "string"
+                    },
+                    "expiresInSeconds": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "expiresInSeconds",
+                    "token",
+                    "user"
+                ]
+            },
+            "PaginatedOrderList": {
+                "type": "object",
+                "properties": {
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Order"
+                        }
+                    },
+                    "page": {
+                        "type": "integer"
+                    },
+                    "pageSize": {
+                        "type": "integer"
+                    },
+                    "total": {
+                        "type": "integer"
+                    },
+                    "totalPages": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "PaymentMethodEnum": {
+                "enum": [
+                    "cod",
+                    "online"
+                ],
+                "type": "string",
+                "description": "* `cod` - cod\n* `online` - online"
+            },
+            "PaymentStatus": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "$ref": "#/components/schemas/StatusEnum"
+                    },
+                    "order": {
+                        "$ref": "#/components/schemas/Order"
+                    }
+                },
+                "required": [
+                    "status"
+                ]
+            },
+            "PlacedOrder": {
+                "type": "object",
+                "properties": {
+                    "order": {
+                        "$ref": "#/components/schemas/Order"
+                    }
+                },
+                "required": [
+                    "order"
+                ]
+            },
+            "PriceRange": {
+                "type": "object",
+                "properties": {
+                    "min": {
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 100000000,
+                        "minimum": -100000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    },
+                    "max": {
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 100000000,
+                        "minimum": -100000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    }
+                },
+                "required": [
+                    "max",
+                    "min"
+                ]
+            },
+            "PricedLine": {
+                "type": "object",
+                "description": "Shared shape of a priced line in the cart (read from CartItem rows).",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Cart item id; send these as `cartItems` when ordering."
+                    },
+                    "productId": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 100000000,
+                        "minimum": -100000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    },
+                    "image": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "quantity": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "id",
+                    "image",
+                    "name",
+                    "price",
+                    "productId",
+                    "quantity",
+                    "slug"
+                ]
+            },
+            "Product": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "summary": {
+                        "type": "string"
+                    },
+                    "categorySlug": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "categoryName": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 100000000,
+                        "minimum": -100000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    },
+                    "compareAtPrice": {
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 100000000,
+                        "minimum": -100000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true,
+                        "nullable": true
+                    },
+                    "image": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "rating": {
+                        "type": "number",
+                        "format": "double"
+                    },
+                    "reviewCount": {
+                        "type": "integer"
+                    },
+                    "inStock": {
+                        "type": "boolean"
+                    },
+                    "isNew": {
+                        "type": "boolean"
+                    },
+                    "soldCount": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "categoryName",
+                    "categorySlug",
+                    "compareAtPrice",
+                    "id",
+                    "image",
+                    "inStock",
+                    "isNew",
+                    "name",
+                    "price",
+                    "rating",
+                    "reviewCount",
+                    "slug",
+                    "soldCount",
+                    "summary"
+                ]
+            },
+            "ProductFilters": {
+                "type": "object",
+                "properties": {
+                    "priceRange": {
+                        "$ref": "#/components/schemas/PriceRange"
+                    }
+                },
+                "required": [
+                    "priceRange"
+                ]
+            },
+            "ProductSuggestion": {
+                "type": "object",
+                "properties": {
+                    "slug": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "categoryName": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "price": {
+                        "type": "number",
+                        "format": "double",
+                        "maximum": 100000000,
+                        "minimum": -100000000,
+                        "exclusiveMaximum": true,
+                        "exclusiveMinimum": true
+                    },
+                    "image": {
+                        "type": "string",
+                        "readOnly": true
+                    }
+                },
+                "required": [
+                    "categoryName",
+                    "image",
+                    "name",
+                    "price",
+                    "slug"
+                ]
+            },
+            "PurposeEnum": {
+                "enum": [
+                    "login",
+                    "register"
+                ],
+                "type": "string",
+                "description": "* `login` - Login\n* `register` - Register"
+            },
+            "Redirect": {
+                "type": "object",
+                "properties": {
+                    "redirectUrl": {
+                        "type": "string",
+                        "format": "uri"
+                    }
+                },
+                "required": [
+                    "redirectUrl"
+                ]
+            },
+            "StatusEnum": {
+                "enum": [
+                    "success",
+                    "failed",
+                    "pending"
+                ],
+                "type": "string",
+                "description": "* `success` - success\n* `failed` - failed\n* `pending` - pending"
+            },
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "readOnly": true
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "mobile": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "id",
+                    "mobile",
+                    "name"
+                ]
+            },
+            "WebhookResult": {
+                "type": "object",
+                "properties": {
+                    "result": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "result"
+                ]
+            }
+        },
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "JWT returned by `POST /auth/otp/verify`."
+            }
+        }
+    }
+}

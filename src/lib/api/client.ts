@@ -97,7 +97,7 @@ function unwrapEnvelope<T>(payload: unknown): T {
 }
 
 // The API sits on a host that sleeps when idle, so the first request after a pause can take a while: wait, then retry once.
-const REQUEST_TIMEOUT_MS = 30_000;
+const REQUEST_TIMEOUT_MS = 60_000;
 const RETRY_DELAY_MS = 1_000;
 const RETRYABLE_STATUSES = new Set([502, 503, 504]);
 
@@ -126,7 +126,9 @@ async function request<T>(
   }
 
   const headers = new Headers({ Accept: "application/json", ...extraHeaders });
-  if (body !== undefined) headers.set("Content-Type", "application/json");
+  const isFormData = body instanceof FormData;
+  // FormData sets its own multipart boundary header.
+  if (body !== undefined && !isFormData) headers.set("Content-Type", "application/json");
   if (auth && target.isBackend) await applyAuth(headers);
 
   const next = revalidate !== undefined || tags ? { revalidate, tags } : undefined;
@@ -140,7 +142,7 @@ async function request<T>(
       response = await fetch(url, {
         method,
         headers,
-        body: body === undefined ? undefined : JSON.stringify(body),
+        body: body === undefined || isFormData ? (body as FormData | undefined) : JSON.stringify(body),
         cache,
         signal: timeout.signal,
         next,

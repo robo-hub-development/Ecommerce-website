@@ -3,25 +3,23 @@ import { Mail, MapPin, Phone } from "lucide-react";
 import { Logo } from "@/components/layout/logo";
 import { NewsletterForm } from "@/components/layout/newsletter-form";
 import { InstagramIcon, YoutubeIcon } from "@/components/ui/social-icons";
+import { site } from "@/config/site";
 import { footerLinks, siteConfig } from "@/lib/site";
+import  logo  from "../../../public/logo-light.svg";
 
 const socials = [
-  { label: "Stem Robo Hub on YouTube", href: siteConfig.social.youtube, Icon: YoutubeIcon },
+  { label: `${siteConfig.name} on YouTube`, href: siteConfig.social.youtube, Icon: YoutubeIcon },
   {
-    label: "Stem Robo Hub on Instagram",
+    label: `${siteConfig.name} on Instagram`,
     href: siteConfig.social.instagram,
     Icon: InstagramIcon,
   },
 ];
 
 const contacts = [
-  { Icon: Mail, text: siteConfig.email, href: `mailto:${siteConfig.email}` },
-  {
-    Icon: Phone,
-    text: siteConfig.phone,
-    href: `tel:${siteConfig.phone.replace(/\s/g, "")}`,
-  },
-  { Icon: MapPin, text: siteConfig.address },
+  { Icon: Mail, text: site.email, href: site.emailHref },
+  { Icon: Phone, text: site.phone, href: site.phoneHref },
+  { Icon: MapPin, text: site.address },
 ];
 
 export function SiteFooter() {
@@ -29,7 +27,7 @@ export function SiteFooter() {
     <footer className="dark bg-background text-foreground">
       <div className="container-page grid gap-12 py-12 lg:grid-cols-[1.4fr_2fr] lg:py-16">
         <div className="flex flex-col gap-5">
-          <Logo />
+          <Logo logo={logo}/>
           <p className="max-w-sm text-muted-foreground">{siteConfig.tagline}</p>
           <div className="max-w-md">
             <p className="mb-2 font-semibold">
@@ -54,7 +52,7 @@ export function SiteFooter() {
           </ul>
         </div>
 
-        <div className="grid gap-8 sm:grid-cols-3">
+        <div className="grid gap-8 sm:grid-cols-4">
           {Object.entries(footerLinks).map(([title, links]) => (
             <nav key={title} aria-label={title}>
               <h2 className="mb-4 text-sm font-semibold">{title}</h2>
@@ -72,7 +70,7 @@ export function SiteFooter() {
               </ul>
             </nav>
           ))}
-          <div className="sm:col-span-3">
+          <div className="sm:col-span-4">
             <h2 className="mb-4 text-sm font-semibold">Contact</h2>
             <ul className="grid gap-3 text-sm text-muted-foreground sm:grid-cols-3">
               {contacts.map(({ Icon, text, href }) => (
@@ -93,7 +91,7 @@ export function SiteFooter() {
       </div>
       <div className="border-t">
         <p className="container-page py-6 text-xs text-muted-foreground">
-          © {new Date().getFullYear()} {siteConfig.name}. All rights reserved.
+          © {new Date().getFullYear()} {site.name}. All rights reserved.
         </p>
       </div>
     </footer>

@@ -1,5 +1,5 @@
+import type { RawArticleDetail } from "@/types/dto";
 import type {
-  Article,
   HeroSlide,
   InstagramPost,
 } from "@/types/content";
@@ -46,7 +46,7 @@ export const mockSlides: HeroSlide[] = [
   },
 ];
 
-export const mockArticles: Article[] = [
+export const mockArticles: RawArticleDetail[] = [
   {
     slug: "choosing-your-first-robot-kit",
     title: "How to choose your first robot kit",
@@ -56,6 +56,8 @@ export const mockArticles: Article[] = [
     author: "Stem Robo Hub Team",
     publishedAt: "2026-10-18",
     readMinutes: 6,
+    content:
+      "<p>Starting out in robotics is easier when the kit matches what you want to learn.</p><h2>Start with the goal</h2><p>Decide whether you want to learn <strong>electronics</strong>, <strong>coding</strong> or <strong>mechanics</strong>, then pick a kit that covers it.</p><ul><li>Motors and a motor driver</li><li>A controller board</li><li>Basic sensors</li></ul><h2>Check the learning material</h2><p>A good kit ships with a build guide and example code. See our <a href=\"/products\">products</a> for kits with guides included.</p>",
   },
   {
     slug: "esp32-vs-arduino-uno-r4",
@@ -66,6 +68,8 @@ export const mockArticles: Article[] = [
     author: "Aarav Mehta",
     publishedAt: "2026-10-04",
     readMinutes: 8,
+    content:
+      "<p>Starting out in robotics is easier when the kit matches what you want to learn.</p><h2>Start with the goal</h2><p>Decide whether you want to learn <strong>electronics</strong>, <strong>coding</strong> or <strong>mechanics</strong>, then pick a kit that covers it.</p><ul><li>Motors and a motor driver</li><li>A controller board</li><li>Basic sensors</li></ul><h2>Check the learning material</h2><p>A good kit ships with a build guide and example code. See our <a href=\"/products\">products</a> for kits with guides included.</p>",
   },
   {
     slug: "build-a-line-follower-in-an-hour",
@@ -76,6 +80,8 @@ export const mockArticles: Article[] = [
     author: "Isha Nair",
     publishedAt: "2026-09-21",
     readMinutes: 10,
+    content:
+      "<p>Starting out in robotics is easier when the kit matches what you want to learn.</p><h2>Start with the goal</h2><p>Decide whether you want to learn <strong>electronics</strong>, <strong>coding</strong> or <strong>mechanics</strong>, then pick a kit that covers it.</p><ul><li>Motors and a motor driver</li><li>A controller board</li><li>Basic sensors</li></ul><h2>Check the learning material</h2><p>A good kit ships with a build guide and example code. See our <a href=\"/products\">products</a> for kits with guides included.</p>",
   },
 ];
 

@@ -7,7 +7,7 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
       // Personal, transactional and internal routes are not for search results.
-      disallow: ["/cart", "/checkout", "/account", "/login", "/register", "/api/"],
+      disallow: ["/cart", "/checkout", "/order", "/account", "/login", "/register", "/api/"],
     },
     sitemap: `${env.siteUrl}/sitemap.xml`,
     host: env.siteUrl,

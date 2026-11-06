@@ -61,23 +61,9 @@ export function setLineQuantity(items: CartItem[], line: CartLineRef, quantity: 
 export const removeLine = (items: CartItem[], line: CartLineRef): CartItem[] =>
   items.filter((item) => !isSameLine(item, line));
 
-/** Cleans carts restored from localStorage: drops malformed lines, merges duplicates, enforces the limit. */
-export function sanitizeLines(value: unknown): CartItem[] {
-  if (!Array.isArray(value)) return [];
-  const lines: CartItem[] = [];
-  for (const raw of value) {
-    const item = raw as Partial<CartItem> | null;
-    if (!item || typeof item.productId !== "string" || typeof item.price !== "number") continue;
-    const existing = lines.find((line) => isSameLine(line, item as CartLineRef));
-    const quantity = Number(item.quantity);
-    if (existing) {
-      existing.quantity = clampQuantity(existing.quantity + (Number.isFinite(quantity) ? quantity : 0));
-    } else {
-      lines.push({ ...(item as CartItem), quantity: clampQuantity(quantity) });
-    }
-  }
-  return lines;
-}
+/** Lines in the shape `PUT /cart` accepts. The backend keys the cart by product, so variants are not sent. */
+export const toServerLines = (items: CartItem[]) =>
+  items.map(({ productId, quantity }) => ({ productId, quantity: clampQuantity(quantity) }));
 
 export const countUnits = (items: CartItem[]) => items.reduce((sum, item) => sum + item.quantity, 0);
 

@@ -6,7 +6,7 @@ import type { YoutubeVideo } from "@/types/content";
 const FEED_URL = "https://www.youtube.com/feeds/videos.xml";
 const REVALIDATE_SECONDS = 1800;
 const TIMEOUT_MS = 10_000;
-const VIDEO_LIMIT = 4;
+const DEFAULT_VIDEO_LIMIT = 4;
 
 const XML_ENTITIES: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&apos;": "'", "&#39;": "'" };
 
@@ -33,7 +33,7 @@ function channelId() {
   return id;
 }
 
-export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
+export async function getYoutubeVideos(limit = DEFAULT_VIDEO_LIMIT): Promise<YoutubeVideo[]> {
   const response = await fetch(`${FEED_URL}?channel_id=${channelId()}`, {
     next: { revalidate: REVALIDATE_SECONDS, tags: ["youtube"] },
     signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -45,5 +45,5 @@ export async function getYoutubeVideos(): Promise<YoutubeVideo[]> {
     .slice(1)
     .map(parseEntry)
     .filter((video): video is YoutubeVideo => video !== null)
-    .slice(0, VIDEO_LIMIT);
+    .slice(0, limit);
 }

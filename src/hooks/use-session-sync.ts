@@ -21,8 +21,8 @@ export function useSessionSync(enabled: boolean) {
   });
 
   useEffect(() => {
-    if (data) setUser(data);
-  }, [data, setUser]);
+    if (enabled && data) setUser(data);
+  }, [enabled, data, setUser]);
 
   useEffect(() => {
     if (error instanceof ApiError && error.status === 401) logout();

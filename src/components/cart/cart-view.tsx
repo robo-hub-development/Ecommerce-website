@@ -2,6 +2,7 @@
 
 import { CartEmpty } from "@/components/cart/cart-empty";
 import { CartLine } from "@/components/cart/cart-line";
+import { CartError } from "@/components/cart/cart-states";
 import { CartSummary } from "@/components/cart/cart-summary";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCart } from "@/hooks/use-cart";
@@ -27,13 +28,14 @@ function CartSkeleton() {
 }
 
 export function CartView() {
-  const { hydrated, items, count, bill, cod } = useCart();
+  const { signedIn, loading, error, refetch, items, count, bill, cod } = useCart();
 
-  if (!hydrated) return <CartSkeleton />;
-  if (items.length === 0) {
+  // Guests never reach /cart (middleware redirects to login); the skeleton covers the moment after logout.
+  if (loading || !signedIn) return <CartSkeleton />;
+  if (error || items.length === 0) {
     return (
       <div className="rounded-xl border border-dashed bg-surface">
-        <CartEmpty />
+        {error ? <CartError onRetry={() => void refetch()} /> : <CartEmpty />}
       </div>
     );
   }

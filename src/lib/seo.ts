@@ -1,21 +1,28 @@
 import type { Metadata } from "next";
 import { env } from "@/lib/env";
+import { site } from "@/config/site";
 import { siteConfig } from "@/lib/site";
+import type { ArticleDetail } from "@/types/content";
 import type { ProductDetail } from "@/types/product";
 
+/** Organization + LocalBusiness: used on the home and contact pages. */
 export function organizationSchema() {
   return {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    name: siteConfig.name,
+    "@type": ["Organization", "LocalBusiness"],
+    name: site.name,
     url: env.siteUrl,
     description: siteConfig.tagline,
-    email: siteConfig.email,
-    telephone: siteConfig.phone,
+    email: site.email,
+    telephone: site.phone,
+    hasMap: site.mapsLink,
     address: {
       "@type": "PostalAddress",
-      streetAddress: siteConfig.address,
-      addressCountry: "IN",
+      streetAddress: site.addressParts.street,
+      addressLocality: site.addressParts.city,
+      addressRegion: site.addressParts.region,
+      postalCode: site.addressParts.postalCode,
+      addressCountry: site.addressParts.country,
     },
     sameAs: Object.values(siteConfig.social).filter(Boolean),
   };
@@ -94,5 +101,21 @@ export function productSchema(product: ProductDetail) {
           },
         }
       : {}),
+  };
+}
+
+export function articleSchema(article: ArticleDetail) {
+  const url = absoluteUrl(`/blog/${article.slug}`);
+  return {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: article.title,
+    description: article.excerpt,
+    image: [absoluteUrl(article.image)],
+    datePublished: article.publishedAt,
+    author: { "@type": "Person", name: article.author || site.name },
+    publisher: { "@type": "Organization", name: site.name, url: env.siteUrl },
+    mainEntityOfPage: url,
+    url,
   };
 }

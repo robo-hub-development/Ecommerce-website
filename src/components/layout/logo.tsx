@@ -1,18 +1,26 @@
+import Image, { type StaticImageData }  from "next/image";
 import Link from "next/link";
-import { Cpu } from "lucide-react";
 import { siteConfig } from "@/lib/site";
+import defaultLogo from "../../../public/logo.svg";
 
-export function Logo() {
+type LogoProps = {
+  logo?: string | StaticImageData;
+};
+
+export function Logo({ logo = defaultLogo }: LogoProps) {
   return (
     <Link
       href="/"
       aria-label={`${siteConfig.name} home`}
-      className="flex items-center gap-2 rounded-md text-lg font-bold tracking-tight"
+      className="flex shrink-0 items-center rounded-md"
     >
-      <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-        <Cpu className="size-5" aria-hidden />
-      </span>
-      <span>{siteConfig.name}</span>
+      <Image
+        src={logo}
+        alt=""
+        priority height={35}
+        />
+        {/* sizes="(min-width: 1024px) 112px, 96px" */}
+        {/* className="w-24 object-contain lg:h-14 lg:w-28" */}
     </Link>
   );
 }
